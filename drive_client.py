@@ -33,3 +33,23 @@ class GoogleDriveClient:
         ).execute()
         return results.get('files', [])
 
+    def copy_to_workspace_folder(self):
+        files = self.list_audio_files()
+        if not files:
+            print("Audio files were not found for copying.")
+            return []
+
+        copied_files = []
+        for file in files:
+            copy_metadata = {
+                'name': file['name'],
+                'parents': [Config.WORKSPACE_FOLDER_ID]
+            }
+            copied = self.service.files().copy(
+                fileId=file['id'],
+                body=copy_metadata
+            ).execute()
+            copied_files.append({'id': copied['id'], 'name': copied['name']})
+            print(f"File {file['name']} copied in a work folder Drive.")
+        return copied_files
+
