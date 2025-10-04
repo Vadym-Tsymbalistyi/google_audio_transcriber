@@ -24,3 +24,12 @@ class GoogleDriveClient:
             with open('token.pickle', 'wb') as token:
                 pickle.dump(self.creds, token)
         self.service = build('drive', 'v3', credentials=self.creds)
+
+    def list_audio_files(self):
+        results = self.service.files().list(
+            q=f"'{Config.DRIVE_FOLDER_ID}' in parents and mimeType contains 'audio/'",
+            pageSize=100,
+            fields="files(id, name)"
+        ).execute()
+        return results.get('files', [])
+
