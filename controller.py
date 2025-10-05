@@ -30,7 +30,7 @@ class MainController:
 
             if self.audio_manager.is_transcribed(audio_name):
                 print(f"File {audio_name} already transcribed, pass.")
-                self.drive_client.upload_file(local_transcript_path, Config.WORKSPACE_FOLDER_ID)
+                self.drive_client.upload_file(local_transcript_path)
                 continue
 
             transcript_text = self.transcriber.transcribe(local_audio_path)
@@ -38,5 +38,5 @@ class MainController:
                 f_txt.write(transcript_text)
             print(f"File {audio_name} transcribed locally.")
 
-            self.drive_client.upload_file(local_transcript_path, Config.WORKSPACE_FOLDER_ID)
+            self.drive_client.upload_file(local_transcript_path)
             print(f"Transcript {os.path.basename(local_transcript_path)} download to Google Drive.\n")

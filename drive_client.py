@@ -13,6 +13,7 @@ class GoogleDriveClient:
         self._authenticate()
 
     def _authenticate(self):
+        """Авторизація та створення сервісу Drive API."""
         if os.path.exists('token.pickle'):
             with open('token.pickle', 'rb') as token:
                 self.creds = pickle.load(token)
@@ -27,12 +28,8 @@ class GoogleDriveClient:
 
         self.service = build('drive', 'v3', credentials=self.creds)
 
-    def _file_exists_in_folder(self, file_name: str, folder_id: str) -> dict | None:
-        query = f"'{folder_id}' in parents and name='{file_name}'"
-        files = self.service.files().list(q=query, fields="files(id, name)").execute().get('files', [])
-        return files[0] if files else None
-
     def list_audio_files(self) -> list:
+        """Список аудіофайлів у DRIVE_FOLDER_ID."""
         results = self.service.files().list(
             q=f"'{Config.DRIVE_FOLDER_ID}' in parents and mimeType contains 'audio/'",
             pageSize=100,
@@ -41,6 +38,7 @@ class GoogleDriveClient:
         return results.get('files', [])
 
     def copy_to_workspace_folder(self) -> list:
+        """Копіювання аудіофайлів у робочу папку."""
         files = self.list_audio_files()
         if not files:
             print("Audio files not found for copying.")
@@ -48,12 +46,6 @@ class GoogleDriveClient:
 
         copied_files = []
         for file in files:
-            existing_file = self._file_exists_in_folder(file['name'], Config.WORKSPACE_FOLDER_ID)
-            if existing_file:
-                print(f"File {file['name']} are already in the work folder, pass copi.")
-                copied_files.append({'id': existing_file['id'], 'name': existing_file['name']})
-                continue
-
             copied = self.service.files().copy(
                 fileId=file['id'],
                 body={'name': file['name'], 'parents': [Config.WORKSPACE_FOLDER_ID]}
@@ -63,6 +55,7 @@ class GoogleDriveClient:
         return copied_files
 
     def download_file(self, file_id: str, destination_path: str):
+        """Завантаження файлу локально."""
         if os.path.exists(destination_path):
             print(f"File {destination_path} already exists locally, pass download.")
             return
@@ -78,18 +71,17 @@ class GoogleDriveClient:
                     print(f"Download {int(status.progress() * 100)}%")
         print(f"The file is downloaded locally: {destination_path}")
 
-    def upload_file(self, local_path: str, folder_id: str) -> str:
+    def upload_file(self, local_path: str) -> str:
+        folder_id = Config.WORKSPACE_FOLDER_ID
         file_name = os.path.basename(local_path)
-        existing_file = self._file_exists_in_folder(file_name, folder_id)
-        if existing_file:
-            print(f"File {file_name} already in the folderDrive (id={existing_file['id']}), пропускаємо завантаження.")
-            return existing_file['id']
 
-        media = MediaFileUpload(local_path)
+        media = MediaFileUpload(local_path, mimetype='text/plain')
+
         uploaded_file = self.service.files().create(
             body={'name': file_name, 'parents': [folder_id]},
             media_body=media,
             fields='id'
         ).execute()
-        print(f"File {file_name} download to Drive (id={uploaded_file['id']})")
+
+        print(f"File {file_name} uploaded to Drive (id={uploaded_file['id']})")
         return uploaded_file['id']
