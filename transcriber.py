@@ -1,13 +1,17 @@
 import whisper
 import os
+import logging
 
 class Transcriber:
-    def __init__(self, model_name="medium"):
+    def __init__(self, model_name="small"):
+        self.logger = logging.getLogger("Transcriber")
+        self.logger.debug("Loading Whisper model '%s'...", model_name)
         self.model = whisper.load_model(model_name)
+        self.logger.info("Whisper model '%s' loaded successfully.", model_name)
 
     def transcribe(self, audio_path):
         file_name = os.path.basename(audio_path)
-        print(f" I transcribe the file: {file_name} ...")
+        self.logger.info("Starting transcription for file: %s", file_name)
 
         result = self.model.transcribe(
             audio_path,
@@ -16,4 +20,5 @@ class Transcriber:
             temperature=0.0
         )
         text = result["text"].strip()
+        self.logger.info("Transcription completed for file: %s", file_name)
         return text
